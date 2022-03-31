@@ -1,0 +1,21 @@
+{{ if  not .Values.baseGrafanaInstalled }}
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: {{ .Values.subscription.name }}
+  namespace: {{ include "grafana-resources.namespace" . }}
+  labels:
+    app: grafana
+    helm.sh/chart: {{ .Chart.Name }}
+    {{- include "grafana-resources.labels" . | nindent 4 }}
+spec:
+  channel: {{ .Values.subscription.channel | quote }}
+  installPlanApproval: {{ .Values.subscription.installPlanApproval | quote }}
+  name: {{ .Values.subscription.name | quote }}
+  source: {{ .Values.subscription.source | quote }}
+  sourceNamespace: {{ .Values.subscription.sourceNamespace | quote }}
+  startingCSV: {{ .Values.subscription.startingCSV }}
+  config:
+    resources:
+      {{ toYaml .Values.subscription.resources | nindent 6 }}
+{{ end }}

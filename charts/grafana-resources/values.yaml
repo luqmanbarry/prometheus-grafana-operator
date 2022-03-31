@@ -1,0 +1,100 @@
+# Default values for grafana-resources.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+enabled: true
+
+baseGrafanaInstalled: true
+
+subscription:
+  enabled: false
+  name: grafana-operator
+  channel: v4
+  installPlanApproval: Automatic
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: grafana-operator.v4.1.1
+  resources:
+    limits:
+      cpu: 200m
+      memory: 300Mi
+    requests:
+      cpu: 100m
+      memory: 150Mi
+
+alerts:
+  prometheusRules:
+    enabled: false
+  alertManager:
+    enabled: false
+  grafana:
+    notificationChannels:
+      enabled: true
+      teams:
+        url: https://ms-tremas-webhook-here
+
+selectors:
+  grafanaOperator:
+    selectionKey: operator
+    selectionValue: grafana
+
+  prometheusQueries:
+    # Replace with your namespace names regex patterns
+    namespace:
+      whitelist: "abc-.*|acb-.*"
+      blacklist: ".*-bld"
+    # Replace with your pod names regex patterns
+    pod:
+      whitelist: "web.*|.*service.*"
+      blacklist: ".*-build"   
+
+
+grafanaRouteName: grafana-route
+
+grafanaDashboard:
+  plugins:
+    enabled: true
+    # CSV list of Grafana Plugins to be installed
+    values: 
+      - name: "grafana-piechart-panel"
+        version: "1.3.6"
+      - name: "grafana-clock-panel"
+        version: "1.0.2"
+      - name: grafana-image-renderer
+        version: "3.4.2"
+
+grafanaInstance:
+  # ROOT_URL: oc get route grafana-route -o jsonpath={.spec.host} -n NAMESPACE
+  serverRootUrl: https://grafana-route-NAMESPACE.company.com
+  serverServeSubPath: true
+  # Possible Values: dark, light
+  defaultTheme: dark
+  logMode: console
+  logLevel: info
+  allowAdminPrivileges: true
+  # Possible values are: Viewer, Editor, Admin
+  defaultRole: Admin
+  proxyImage: quay.io/openshift/origin-oauth-proxy:4.9
+  resources:
+    limits:
+      cpu: '1'
+      memory: 300Mi
+    requests:
+      cpu: 100m
+      memory: 150Mi
+  initResources:
+    limits:
+      cpu: '1'
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+grafanaDataSource:
+  # This value comes from a ServiceAccount with cluster-monitoring-view role
+  # oc serviceaccounts get-token grafana-serviceaccount
+  name: prometheus
+  auth:
+    bearerToken: cluster-monitoring-view-service-account-here
+    url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'

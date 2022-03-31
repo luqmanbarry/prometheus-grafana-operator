@@ -1,0 +1,7 @@
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: "{{ include "olm-resources.namespace" . }}-{{ randAlphaNum 5 | lower }}"
+spec:
+  targetNamespaces:
+  - {{ include "olm-resources.namespace" . }}

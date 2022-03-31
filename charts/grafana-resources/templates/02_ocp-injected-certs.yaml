@@ -1,0 +1,12 @@
+{{ if  not .Values.baseGrafanaInstalled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    config.openshift.io/inject-trusted-cabundle: "true"
+    app: grafana
+    helm.sh/chart: {{ .Chart.Name }}
+    {{- include "grafana-resources.labels" . | nindent 4 }}
+  name: ocp-injected-certs
+  namespace: {{ include "grafana-resources.namespace" . }}
+{{ end }}

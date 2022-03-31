@@ -1,0 +1,33 @@
+{{ if  not .Values.baseGrafanaInstalled }}
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaDataSource
+metadata:
+  labels:
+    app: grafana
+    {{ .Values.selectors.grafanaOperator.selectionKey }}: {{ .Values.selectors.grafanaOperator.selectionValue }}
+    helm.sh/chart: {{ .Chart.Name }}
+    {{- include "grafana-resources.labels" . | nindent 4 }}
+  name: {{ .Values.grafanaDataSource.name }}
+  namespace: {{ include "grafana-resources.namespace" . }}
+spec:
+  datasources:
+    - access: proxy
+      editable: true
+      isDefault: true
+      jsonData:
+        # customQueryParameters: namespace=mynamespace
+        httpHeaderName1: Authorization
+        timeInterval: 5s
+        tlsSkipVerify: true
+      name: Prometheus
+      secureJsonData:
+        httpHeaderValue1: >-
+          Bearer {{ .Values.grafanaDataSource.auth.bearerToken }}
+      type: prometheus
+      version: 1
+      # Cluster scoped
+      url: {{ .Values.grafanaDataSource.auth.url  }}
+      # Namespaced scoped - requires customQueryParameters: namespace=mynamespace
+      # url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9092'
+  name: prometheus
+{{ end }}

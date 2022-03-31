@@ -1,0 +1,26 @@
+Installs Grafana resources.
+
+This include the following:
+  - Grafana
+  - GrafanaDataSource
+  - GrafanaDashboard
+  - GrafanaNotificationChannel
+  - PrometheusRule: Set alerts.prometheusRules.enabled to true for installation.
+  - AlertManager: Set alerts.alertManager.enabled to true for installation.
+    Configuration: Incomplete, provide missing configs.
+
+Updates that must be done for each individual application team:
+  In charts/grafana-resources/values.yaml
+    selectors:
+      grafanaOperator:
+        selectionKey: app-team
+        selectionValue: abc-acb
+      prometheusQueries:
+        # Replace with your namespace names regex patterns
+        namespace:
+          whitelist: "abc-.*|acb-.*"
+          blacklist: ".*-bld"
+        # Replace with your pod names regex patterns
+        pod:
+          whitelist: "web.*|.*service.*"
+          blacklist: ".*-build"   

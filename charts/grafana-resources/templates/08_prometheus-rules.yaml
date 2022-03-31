@@ -1,0 +1,71 @@
+{{ if .Values.alerts.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    role: alert-rules
+    app: strimzi
+  name: prometheus-jvm-rules
+  namespace: {{ include "grafana-resources.namespace" . }}
+spec:
+  groups:
+  - name: ROSA JMX Alerts
+    rules:
+    - alert: ApplicationPodDown
+      expr: "up{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"} < 1"
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: 'Application Pod is down.'
+        description: '{{`Application pod {{ $pod }} in namespace {{ $namespace }} is down.`}}'
+    - alert: HighCPUUtilization
+      expr: "clamp((sum(pod:container_cpu_usage:sum{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist}}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}) by (namespace,pod,exported_endpoint)*100/sum(kube_pod_container_resource_limits{unit=\"core\",namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist}}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\",container!=\"deployment\"}) by (namespace,pod,exported_endpoint)),0,100) >= 90"
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: 'CPU utilization spike observed.'
+        description: '{{`Application pod {{ $pod }} in namespace {{ $namespace }} cpu is above the utilization threshold; {{ $value }}.`}}'  
+    - alert: HighMemoryUtilization
+      expr: "clamp(sum(container_memory_working_set_bytes{container!=\"\",namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist}}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}) by (namespace,pod,exported_endpoint)*100 / sum(kube_pod_container_resource_limits{unit=\"byte\",namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist}}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}) by (namespace,pod,exported_endpoint),0,100) >= 90"
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: 'Memory utilization spike observed.'
+        description: '{{`Application pod {{ $pod }} in namespace {{ $namespace }} memory is above the utilization threshold; {{ $value }}.`}}'
+    - alert: HighJvmHeapUtilization
+      expr: "clamp(jvm_memory_bytes_used{area=\"heap\",namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist}}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}*100/jvm_memory_bytes_max{area=\"heap\",namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"},0,100) >= 90"
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: 'JVM Heap utilization spike observed.'
+        description: '{{`Application pod {{ $pod }} in namespace {{ $namespace }} heap is above the utilization threshold; {{ $value }}.`}}'
+    - alert: HighDeadlockedThreads
+      expr: "jvm_threads_deadlocked{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"} > 3"
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'High deadlocked threads.'
+        description: '{{`Application pod {{ $pod }} in namespace {{ $namespace }} threads has {{$value}} deadlocked threads.`}}'
+    - alert: SlowServletResponse
+      expr: "sum(jboss_undertow_ws_average_processing_time{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"} / jboss_undertow_ws_request_count{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}) by (namespace,pod,exported_endpoint) >= 2*(avg(jboss_undertow_ws_average_processing_time{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"} / jboss_undertow_ws_request_count{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}) by (namespace,pod,exported_endpoint))"
+      for: 10s
+      labels:
+        severity: critical
+      annotations:
+        summary: 'Slow Endpoint/Transaction'
+        description: '{{`Edpoint {{namespace}} / {{pod}} / {{exported_endpoint}} requests are 2x the average response time.`}}'       
+    - alert: HighEndpointCallVolume
+      expr: "increase(jboss_undertow_ws_request_count{namespace=~\"{{ .Values.selectors.prometheusQueries.namespace.whitelist }}\",namespace!~\"{{ .Values.selectors.prometheusQueries.namespace.blacklist }}\",pod=~\"{{ .Values.selectors.prometheusQueries.pod.whitelist }}\",pod!~\"{{ .Values.selectors.prometheusQueries.pod.blacklist }}\"}[1m]) >= 300"
+      for: 10s
+      labels:
+        severity: warning
+      annotations:
+        summary: 'Endpoint call volume spiked.'
+        description: '{{`Application pod {{ $pod }} in namespace {{ $namespace }} registered {{ $value }} calls per minute.`}}'
+
+{{ end }}     

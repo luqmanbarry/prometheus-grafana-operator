@@ -1,0 +1,23 @@
+{{ if .Values.alerts.alertManager.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-main
+  namespace: openshift-monitoring
+type: Opaque
+stringData:
+  alertmanager.yaml: |
+    global:
+      slack_api_url: https://hooks.slack.com/services/change/me/please
+    route:
+      receiver: slack
+    receivers:
+    - name: slack
+      slack_configs:
+      - channel: "#jboss-rosa-alerts"
+        title: "some text here"
+        text: "some text here"
+        send_resolved: true
+
+{{ end }}
+    

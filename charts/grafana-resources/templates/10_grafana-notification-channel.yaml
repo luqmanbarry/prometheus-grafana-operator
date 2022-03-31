@@ -1,0 +1,27 @@
+{{ if .Values.alerts.grafana.notificationChannels.enabled }}
+apiVersion: integreatly.org/v1alpha1
+kind: GrafanaNotificationChannel
+metadata:
+  name: msteams-channel
+  namespace: {{ include "grafana-resources.namespace" . }}
+  labels:
+    app: grafana
+    {{ .Values.selectors.grafanaOperator.selectionKey }}: {{ .Values.selectors.grafanaOperator.selectionValue }}
+    helm.sh/chart: {{ .Chart.Name }}
+    {{- include "grafana-resources.labels" . | nindent 4 }}
+spec:
+  name: msteams-channel.json
+  json: >
+    {
+      "uid": "msteams-notification",
+      "name": "Microsoft Teams alert notification",
+      "type":  "teams",
+      "isDefault": true,
+      "sendReminder": true,
+      "frequency": "5m",
+      "disableResolveMessage": true,
+      "settings": {
+          "url": "{{ .Values.alerts.grafana.notificationChannels.teams.url }}"
+      }
+    }
+{{ end }}

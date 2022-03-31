@@ -1,0 +1,44 @@
+# Default values for prometheus-grafana-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+  
+
+# SUB CHART VALUES
+olm-resources:
+  enabled: false
+  catalogSource:
+    sourceType: grpc
+    image: quay.io/grafana-operator/grafana-operator:v4.1.1
+
+grafana-resources:
+  enabled: true
+  operatorSelector:
+    selectionKey: operators.coreos.com/name
+    selectionValue: grafana-operator
+  grafanaRouteName: grafana
+  grafanaInstance:
+    logMode: console
+    logLevel: info
+    allowAdminPrivileges: "True"
+    proxyImage: 'quay.io/openshift/origin-oauth-proxy:4.9'
+    resources:
+      limits:
+        cpu: '1'
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    initResources:
+      limits:
+        cpu: '1'
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+  grafanaDataSource:
+    # This value comes from a ServiceAccount with cluster-monitoring-view role
+    # oc serviceaccounts get-token grafana-serviceaccount
+    auth:
+      bearerToken: cluster-monitoring-view-service-account-here
+      url: 'https://thanos-querier.openshift-monitoring.svc.cluster.local:9091'

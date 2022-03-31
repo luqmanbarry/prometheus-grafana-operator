@@ -1,0 +1,3 @@
+1_access.yaml
+Chart.lock
+charts/grafana-resources/values.yaml

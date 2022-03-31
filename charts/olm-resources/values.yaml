@@ -1,0 +1,15 @@
+# Default values for olm-resources.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+catalogSource:
+  enabled: true
+  sourceType: grpc
+  image: registry.redhat.io/redhat/community-operator-index:v4.9
+  publisher: Red Hat 
+  displayName: Community Operators
+  updateInterval: 10m0s
+  name: grafana-operator
+  spec:
+  priority: -400
